@@ -1,0 +1,81 @@
+# DevSecOps Homelab Portfolio
+
+A personal homelab project built on a Mac Mini running two Ubuntu VMs on Parallels Desktop Pro. Demonstrates a production-style DevOps pipeline from infrastructure provisioning to application delivery, observability, and operations — targeting DevOps and DevSecOps engineering roles at DHL IT Services Malaysia.
+
+## Infrastructure
+
+| Component | Details |
+|---|---|
+| Host | Mac Mini 2018, macOS Sequoia, Parallels Desktop Pro |
+| Control plane VM | Ubuntu 24.04.4 LTS (k3s-control), 4 CPU / 8GB RAM — K3s, ArgoCD, Prometheus, Grafana, Loki |
+| Worker VM | Ubuntu 24.04.4 LTS (k3s-worker), 4 CPU / 6GB RAM — Oracle XE, Splunk, app workloads |
+| Remote access | MacBook Air M4 via Tailscale VPN (stable 100.x.x.x IPs) |
+| Kubernetes | K3s (lightweight distribution, single binary) |
+| Container registry | Docker Hub (public) |
+
+## Pipeline
+
+```
+git push
+  ↓
+GitHub Actions (path-filtered per service)
+  test → docker build (multi-stage)
+       → trivy image scan (CVE — fails on CRITICAL/HIGH)
+       → trivy config scan (K8s manifest misconfigurations)
+       → trivy secret scan (hardcoded credentials)
+       → SBOM generation (CycloneDX) uploaded as artifact
+       → SARIF results uploaded to GitHub Security tab
+  push to Docker Hub
+  bot commit: updates kustomize overlay with new image SHA
+  ↓
+ArgoCD detects manifest change (polls every 3 min)
+  ↓
+K3s cluster — rolling update
+  (containers run non-root, read-only filesystem, no privilege escalation)
+  ↓
+Prometheus + Grafana (metrics)
+Loki + Promtail (logs)
+Splunk + Fluent Bit (enterprise log aggregation)
+```
+
+## Lab Structure
+
+Four labs built sequentially. Each layer adds to the previous without removing anything.
+
+```
+lab0          lab1-dhl          lab2-dhl          lab3-dhl
+────────      ──────────────    ──────────────    ──────────────
+Python/Flask  Java/Spring Boot  Unix operations   Ansible
+K3s           React/Nginx       K8s troubleshoot  OpenShift (CRC)
+ArgoCD        Oracle XE         Oracle DB ops     Dynatrace APM
+GitHub Actions Splunk/Fluent Bit iptables/MetalLB  Shell scripting
+Helm/Kustomize Kustomize/ArgoCD Azure AKS         Jenkins CI
+Terraform     Prometheus/JVM   Incident response
+Trivy         Full-stack demo
+Prometheus/
+  Grafana/Loki
+Blue-green/
+  Canary
+```
+
+## DHL Role Mapping
+
+| DHL Role | Labs | Key Technologies |
+|---|---|---|
+| DevOps Engineer (Java & React) | lab0 + lab1-dhl (all 12 guides) | Java/Spring Boot, React/Vite, Oracle XE, Nginx, Docker, K3s, ArgoCD, GitHub Actions, Prometheus, Splunk |
+| DevOps Engineer (Java/Oracle) | lab0 + lab1-dhl guides 01–06 | Java/Spring Boot, Oracle XE, Splunk, Trivy, Kustomize, ArgoCD, Prometheus/JVM metrics |
+| DevOps Engineer (Ops/Infrastructure) | lab0 + lab1-dhl + lab2-dhl | All above + Unix/Linux ops, K8s troubleshooting, Oracle DBA, iptables, MetalLB, Azure AKS |
+| Application Support Engineer | lab0 + lab1-dhl + lab3-dhl | All above + Ansible playbooks, OpenShift, Dynatrace APM, Jenkins, shell scripting |
+
+## Current Progress
+
+See `guide/log-progress.md` for which guides are complete and what comes next.
+
+## Guide Directories
+
+| Directory | Contents |
+|---|---|
+| `guide/lab0/` | 13 guides — DevOps foundation (Python/Flask pipeline) |
+| `guide/lab1-dhl/` | 12 guides — DHL full-stack app (Java/Oracle/Splunk + React/Nginx) |
+| `guide/lab2-dhl/` | 7 guides — DHL operations (Unix, K8s ops, Oracle DBA, Azure) |
+| `guide/lab3-dhl/` | 7 guides — DHL automation (Ansible, OpenShift, Dynatrace) |
