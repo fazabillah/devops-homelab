@@ -1,5 +1,6 @@
 # Trivy ignore file — accepted risks with no available fix
-# All entries below are OS-level Debian 12 (Bookworm) CVEs with no fixed version.
+# The workflow uses ignore-unfixed: true to skip CVEs without a fix.
+# Entries here cover additional suppressions (e.g. will_not_fix status).
 # Reviewed: 2026-04-02
 
 # glibc (libc-bin, libc6) — no fix available in Debian 12
