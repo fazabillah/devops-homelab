@@ -1,6 +1,6 @@
 # DevSecOps Homelab Portfolio
 
-A personal homelab project built on a Mac Mini running two Ubuntu VMs on Parallels Desktop Pro. Demonstrates a production-style DevOps pipeline from infrastructure provisioning to application delivery, observability, and operations — targeting DevOps and DevSecOps engineering roles at DHL IT Services Malaysia.
+A personal homelab project built on a Mac Mini running two Ubuntu VMs on Parallels Desktop Pro. Demonstrates a production-style DevOps pipeline from infrastructure provisioning to application delivery, observability, and operations — targeting DevOps, platform engineering, and DevSecOps roles.
 
 ## Infrastructure
 
@@ -58,14 +58,16 @@ Blue-green/
   Canary
 ```
 
-## DHL Role Mapping
+## Role Mapping by Skill Focus
 
-| DHL Role | Labs | Key Technologies |
+Match your target role's JD requirements to the labs below. Each lab covers a distinct skill domain — complete the labs that align with the skills listed in your JD.
+
+| Skill Focus | Labs | Key Technologies |
 |---|---|---|
-| DevOps Engineer (Java & React) | lab0 + lab1-dhl (all 12 guides) | Java/Spring Boot, React/Vite, Oracle XE, Nginx, Docker, K3s, ArgoCD, GitHub Actions, Prometheus, Splunk |
-| DevOps Engineer (Java/Oracle) | lab0 + lab1-dhl guides 01–06 | Java/Spring Boot, Oracle XE, Splunk, Trivy, Kustomize, ArgoCD, Prometheus/JVM metrics |
-| DevOps Engineer (Ops/Infrastructure) | lab0 + lab1-dhl + lab2-dhl | All above + Unix/Linux ops, K8s troubleshooting, Oracle DBA, iptables, MetalLB, Azure AKS |
-| Application Support Engineer | lab0 + lab1-dhl + lab3-dhl | All above + Ansible playbooks, OpenShift, Dynatrace APM, Jenkins, shell scripting |
+| Full-stack application engineering (Java + React) | lab0 + lab1-dhl (all 12 guides) | Java/Spring Boot, React/Vite, Oracle XE, Nginx, Docker, K3s, ArgoCD, GitHub Actions, Prometheus, Splunk |
+| Backend application engineering (Java + Oracle) | lab0 + lab1-dhl guides 01–06 | Java/Spring Boot, Oracle XE, Splunk, Trivy, Kustomize, ArgoCD, Prometheus/JVM metrics |
+| Platform operations (Unix, K8s, cloud) | lab0 + lab1-dhl + lab2-dhl | All above + Unix/Linux ops, K8s troubleshooting, Oracle DBA, iptables, MetalLB, Azure AKS |
+| Automation and application support | lab0 + lab1-dhl + lab3-dhl | All above + Ansible playbooks, OpenShift, Dynatrace APM, Jenkins, shell scripting |
 
 ## Current Progress
 
@@ -76,6 +78,6 @@ See `guide/log-progress.md` for which guides are complete and what comes next.
 | Directory | Contents |
 |---|---|
 | `guide/lab0/` | 13 guides — DevOps foundation (Python/Flask pipeline) |
-| `guide/lab1-dhl/` | 12 guides — DHL full-stack app (Java/Oracle/Splunk + React/Nginx) |
-| `guide/lab2-dhl/` | 7 guides — DHL operations (Unix, K8s ops, Oracle DBA, Azure) |
-| `guide/lab3-dhl/` | 7 guides — DHL automation (Ansible, OpenShift, Dynatrace) |
+| `guide/lab1-dhl/` | 12 guides — full-stack application engineering (Java/Oracle/Splunk + React/Nginx) |
+| `guide/lab2-dhl/` | 7 guides — platform operations (Unix, K8s ops, Oracle DBA, Azure) |
+| `guide/lab3-dhl/` | 7 guides — automation and application support (Ansible, OpenShift, Dynatrace) |

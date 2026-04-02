@@ -1,6 +1,6 @@
-# DHL Stack Runbook
+# Lab Stack Runbook
 
-Operational reference for the DHL lab stack: Spring Boot screening app, Oracle XE, Splunk, ArgoCD on K3s.
+Operational reference for the lab1-dhl stack: Spring Boot screening app, Oracle XE, Splunk, ArgoCD on K3s.
 
 Three scenarios are covered. Each follows the same structure: what you observe first, how you dig in, and how you fix it.
 
