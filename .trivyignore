@@ -1,0 +1,19 @@
+# Trivy ignore file — accepted risks with no available fix
+# All entries below are OS-level Debian 12 (Bookworm) CVEs with no fixed version.
+# Reviewed: 2026-04-02
+
+# glibc (libc-bin, libc6) — no fix available in Debian 12
+CVE-2026-0861
+CVE-2026-4046
+
+# ncurses (libncursesw6, libtinfo6, ncurses-base, ncurses-bin) — no fix available
+CVE-2025-69720
+
+# sqlite (libsqlite3-0) — no fix available in Debian 12
+CVE-2025-7458
+
+# systemd (libsystemd0, libudev1) — no fix available in Debian 12
+CVE-2026-29111
+
+# zlib (zlib1g) — upstream will_not_fix; only affects minizip component, not used by this app
+CVE-2023-45853

@@ -92,7 +92,6 @@ credentials.yml
 .token
 
 # Trivy
-.trivyignore
 trivy-report.json
 trivy-report.html
 
