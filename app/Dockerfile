@@ -1,5 +1,6 @@
 # Stage 1: Builder
-FROM python:3.12-slim AS builder
+# Digest pinned to a known-clean image. Update periodically after re-running trivy locally.
+FROM python:3.12-slim-bookworm@sha256:31c0807da611e2e377a2e9b566ad4eb038ac5a5838cbbbe6f2262259b5dc77a0 AS builder
 
 WORKDIR /app
 
@@ -11,7 +12,7 @@ COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
 # Stage 2: Runtime
-FROM python:3.12-slim AS runtime
+FROM python:3.12-slim-bookworm@sha256:31c0807da611e2e377a2e9b566ad4eb038ac5a5838cbbbe6f2262259b5dc77a0 AS runtime
 
 WORKDIR /app
 
