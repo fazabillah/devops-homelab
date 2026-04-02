@@ -1,0 +1,25 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: homelab-python-app-dev
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: default
+
+  source:
+    repoURL: https://github.com/fazabillah/devops-homelab
+    targetRevision: HEAD
+    path: kustomize/overlays/dev  # Use Kustomize overlay for dev
+
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: app-dev
+
+  syncPolicy:
+    automated:
+      prune: true      # Delete resources removed from Git
+      selfHeal: true   # Revert manual cluster changes
+    syncOptions:
+      - CreateNamespace=true
