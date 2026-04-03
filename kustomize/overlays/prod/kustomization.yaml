@@ -13,7 +13,7 @@ patches:
 
 images:
   - name: docker.io/fazabillah/homelab-python-app
-    newTag: sha-03fb1e4
+    newTag: sha-2c145ff
 
 configMapGenerator:
   - name: app-config
