@@ -95,6 +95,11 @@ credentials.yml
 # Trivy
 trivy-report.json
 trivy-report.html
+trivy-results.sarif
+trivy-config-results.sarif
+trivy-secrets.sarif
+sbom.json
+sbom.spdx.json
 
 # SonarQube
 .sonar/
