@@ -112,6 +112,21 @@ jobs:
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
 
+      - name: Generate SBOM
+        if: github.event_name != 'pull_request'
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: ${{ env.IMAGE_NAME }}:sha-${{ env.SHORT_SHA }}
+          format: "cyclonedx"
+          output: "sbom.json"
+
+      - name: Upload SBOM as artifact
+        if: github.event_name != 'pull_request'
+        uses: actions/upload-artifact@v4
+        with:
+          name: sbom
+          path: sbom.json
+
       - name: Update image tag in Kustomize overlay
         if: github.event_name != 'pull_request'
         run: |
@@ -127,3 +142,50 @@ jobs:
           git add kustomize/overlays/prod/kustomization.yaml
           git commit -m "ci: update prod image tag to ${SHA_TAG}" || exit 0
           git push
+
+  scan-manifests:
+    name: Scan Kubernetes Manifests
+    runs-on: ubuntu-latest
+    permissions:
+      security-events: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Run Trivy misconfiguration scan
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: "config"
+          scan-ref: "."
+          format: "sarif"
+          output: "trivy-config-results.sarif"
+          exit-code: "0"         # Informational only — findings go to Security tab
+
+      - name: Upload results to GitHub Security tab
+        uses: github/codeql-action/upload-sarif@v3
+        if: always() && hashFiles('trivy-config-results.sarif') != ''
+        with:
+          sarif_file: "trivy-config-results.sarif"
+
+  scan-secrets:
+    name: Scan for Secrets in Code
+    runs-on: ubuntu-latest
+    permissions:
+      security-events: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Run Trivy secret scan
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: "fs"
+          scan-ref: "."
+          scanners: "secret"
+          format: "sarif"
+          output: "trivy-secrets.sarif"
+          exit-code: "1"         # Fail the pipeline if a secret is found
+
+      - name: Upload results to GitHub Security tab
+        uses: github/codeql-action/upload-sarif@v3
+        if: always() && hashFiles('trivy-secrets.sarif') != ''
+        with:
+          sarif_file: "trivy-secrets.sarif"
