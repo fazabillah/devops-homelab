@@ -43,7 +43,7 @@ Splunk + Fluent Bit (enterprise log aggregation)
 Four labs built sequentially. Each layer adds to the previous without removing anything.
 
 ```
-lab0          lab1-dhl          lab2-dhl          lab3-dhl
+lab0          lab1-java          lab2-platform          lab3-automation
 ────────      ──────────────    ──────────────    ──────────────
 Python/Flask  Java/Spring Boot  Unix operations   Ansible
 K3s           React/Nginx       K8s troubleshoot  OpenShift (CRC)
@@ -64,10 +64,10 @@ Match your target role's JD requirements to the labs below. Each lab covers a di
 
 | Skill Focus | Labs | Key Technologies |
 |---|---|---|
-| Full-stack application engineering (Java + React) | lab0 + lab1-dhl (all 12 guides) | Java/Spring Boot, React/Vite, Oracle XE, Nginx, Docker, K3s, ArgoCD, GitHub Actions, Prometheus, Splunk |
-| Backend application engineering (Java + Oracle) | lab0 + lab1-dhl guides 01–06 | Java/Spring Boot, Oracle XE, Splunk, Trivy, Kustomize, ArgoCD, Prometheus/JVM metrics |
-| Platform operations (Unix, K8s, cloud) | lab0 + lab1-dhl + lab2-dhl | All above + Unix/Linux ops, K8s troubleshooting, Oracle DBA, iptables, MetalLB, Azure AKS |
-| Automation and application support | lab0 + lab1-dhl + lab3-dhl | All above + Ansible playbooks, OpenShift, Dynatrace APM, Jenkins, shell scripting |
+| Full-stack application engineering (Java + React) | lab0 + lab1-java (all 12 guides) | Java/Spring Boot, React/Vite, Oracle XE, Nginx, Docker, K3s, ArgoCD, GitHub Actions, Prometheus, Splunk |
+| Backend application engineering (Java + Oracle) | lab0 + lab1-java guides 01–06 | Java/Spring Boot, Oracle XE, Splunk, Trivy, Kustomize, ArgoCD, Prometheus/JVM metrics |
+| Platform operations (Unix, K8s, cloud) | lab0 + lab1-java + lab2-platform | All above + Unix/Linux ops, K8s troubleshooting, Oracle DBA, iptables, MetalLB, Azure AKS |
+| Automation and application support | lab0 + lab1-java + lab3-automation | All above + Ansible playbooks, OpenShift, Dynatrace APM, Jenkins, shell scripting |
 
 ## Current Progress
 
@@ -78,6 +78,6 @@ See `guide/log-progress.md` for which guides are complete and what comes next.
 | Directory | Contents |
 |---|---|
 | `guide/lab0/` | 13 guides — DevOps foundation (Python/Flask pipeline) |
-| `guide/lab1-dhl/` | 12 guides — full-stack application engineering (Java/Oracle/Splunk + React/Nginx) |
-| `guide/lab2-dhl/` | 7 guides — platform operations (Unix, K8s ops, Oracle DBA, Azure) |
-| `guide/lab3-dhl/` | 7 guides — automation and application support (Ansible, OpenShift, Dynatrace) |
+| `guide/lab1-java/` | 12 guides — full-stack application engineering (Java/Oracle/Splunk + React/Nginx) |
+| `guide/lab2-platform/` | 7 guides — platform operations (Unix, K8s ops, Oracle DBA, Azure) |
+| `guide/lab3-automation/` | 7 guides — automation and application support (Ansible, OpenShift, Dynatrace) |
