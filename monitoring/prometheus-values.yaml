@@ -1,0 +1,94 @@
+# Reduce resource usage for homelab
+prometheus:
+  prometheusSpec:
+    # Retention: 15 days (default is 10 days)
+    retention: 15d
+    # Keep storage under 10GB
+    storageSpec:
+      volumeClaimTemplate:
+        spec:
+          storageClassName: local-path  # K3s default storage class
+          accessModes: ["ReadWriteOnce"]
+          resources:
+            requests:
+              storage: 8Gi
+    # Reduced resource limits
+    resources:
+      requests:
+        cpu: 200m
+        memory: 400Mi
+      limits:
+        cpu: 500m
+        memory: 1Gi
+
+alertmanager:
+  alertmanagerSpec:
+    resources:
+      requests:
+        cpu: 50m
+        memory: 50Mi
+      limits:
+        cpu: 200m
+        memory: 200Mi
+    # Mount the Kubernetes secret containing the Telegram bot token
+    secrets:
+      - alertmanager-telegram
+  config:
+    global:
+      resolve_timeout: 5m
+    route:
+      receiver: telegram
+      group_by: ['alertname', 'namespace']
+      group_wait: 30s
+      group_interval: 5m
+      repeat_interval: 12h
+    receivers:
+      - name: telegram
+        telegram_configs:
+          - bot_token_file: /etc/alertmanager/secrets/alertmanager-telegram/bot_token
+            chat_id: 628103958
+            message: |
+              {{ range .Alerts }}
+              *{{ .Labels.alertname }}*
+              {{ .Annotations.summary }}
+              {{ .Annotations.description }}
+              Namespace: {{ .Labels.namespace }}
+              Status: {{ .Status }}
+              {{ end }}
+            parse_mode: Markdown
+
+grafana:
+  adminPassword: "changeme123"  # Change this
+  persistence:
+    enabled: true
+    storageClassName: local-path
+    size: 2Gi
+  resources:
+    requests:
+      cpu: 100m
+      memory: 256Mi
+    limits:
+      cpu: 300m
+      memory: 512Mi  # Raised from 256Mi — Grafana exceeds 256Mi at startup with default dashboards enabled
+  # Enable default Kubernetes dashboards
+  defaultDashboardsEnabled: true
+
+# Reduce kube-state-metrics resources
+kube-state-metrics:
+  resources:
+    requests:
+      cpu: 50m
+      memory: 64Mi
+    limits:
+      cpu: 200m
+      memory: 128Mi
+
+# Reduce node-exporter resources
+prometheus-node-exporter:
+  resources:
+    requests:
+      cpu: 50m
+      memory: 32Mi
+    limits:
+      cpu: 100m
+      memory: 64Mi
