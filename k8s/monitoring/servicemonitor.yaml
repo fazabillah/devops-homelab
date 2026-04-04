@@ -1,0 +1,20 @@
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: homelab-python-app
+  namespace: monitoring
+  labels:
+    release: kube-prometheus-stack  # Must match the Prometheus release label
+spec:
+  namespaceSelector:
+    matchNames:
+      - app-dev
+      - app-staging
+      - app-prod
+  selector:
+    matchLabels:
+      app: homelab-python-app
+  endpoints:
+  - port: http
+    path: /metrics
+    interval: 30s
