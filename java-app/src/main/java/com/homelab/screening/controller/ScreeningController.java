@@ -36,6 +36,7 @@ public class ScreeningController {
                     rs.getString("created_at")
                 )
             );
+            log.info("GET /api/screenings - {} results returned", results.size());
             return ResponseEntity.ok(results);
         } catch (DataAccessException e) {
             // Return a degraded response rather than a 500 when the DB is unreachable.
