@@ -12,4 +12,4 @@ patches:
 
 images:
   - name: fazabillah/java-screening-app
-    newTag: sha-3f7bd03
+    newTag: sha-b948ae8
