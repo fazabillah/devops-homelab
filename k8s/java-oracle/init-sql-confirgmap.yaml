@@ -1,0 +1,23 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: oracle-init-sql
+  namespace: java-prod
+data:
+  01_create_schema.sql: |
+    -- Create the screenings table in the pluggable database (XEPDB1)
+    ALTER SESSION SET CONTAINER = XEPDB1;
+
+    CREATE TABLE screenings (
+      id          NUMBER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+      reference   VARCHAR2(64)  NOT NULL,
+      status      VARCHAR2(32)  NOT NULL DEFAULT 'PENDING',
+      created_at  TIMESTAMP     DEFAULT SYSTIMESTAMP NOT NULL
+    );
+
+    -- Insert sample shipment screening rows so the API returns real data on first query
+    INSERT INTO screenings (reference, status) VALUES ('SHIP-2024-001', 'CLEARED');
+    INSERT INTO screenings (reference, status) VALUES ('SHIP-2024-002', 'PENDING');
+    INSERT INTO screenings (reference, status) VALUES ('SHIP-2024-003', 'FLAGGED');
+
+    COMMIT;

@@ -1,0 +1,12 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: oracle-data-pvc
+  namespace: java-prod
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: local-path   # K3s built-in storage class
+  resources:
+    requests:
+      storage: 10Gi
