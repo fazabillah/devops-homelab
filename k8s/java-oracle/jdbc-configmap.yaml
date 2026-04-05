@@ -1,0 +1,11 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: oracle-jdbc-config
+  namespace: java-prod
+data:
+  # The Spring Boot app reads DB_URL from the environment.
+  # oracle-svc is the ClusterIP Service name defined below.
+  # XEPDB1 is the pluggable database created by Oracle XE on first boot.
+  DB_URL: "jdbc:oracle:thin:@oracle-svc.java-prod.svc.cluster.local:1521/XEPDB1"
+  DB_USERNAME: "system"

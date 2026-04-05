@@ -1,0 +1,85 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: oracle
+  namespace: java-prod
+spec:
+  serviceName: oracle-svc
+  replicas: 1
+  selector:
+    matchLabels:
+      app: oracle
+  template:
+    metadata:
+      labels:
+        app: oracle
+    spec:
+      # Force Oracle onto VM2 (k3s-worker). Oracle needs 2GB RAM.
+      # VM1 runs the control plane + monitoring stack and does not have headroom.
+      nodeSelector:
+        kubernetes.io/hostname: k3s-worker
+
+      containers:
+        - name: oracle
+          image: container-registry.oracle.com/database/express:21.3.0-xe
+          ports:
+            - containerPort: 1521
+              name: jdbc
+          env:
+            - name: ORACLE_PWD
+              valueFrom:
+                secretKeyRef:
+                  name: oracle-db-secret
+                  key: DB_PASSWORD
+            - name: ORACLE_CHARACTERSET
+              value: AL32UTF8
+
+          resources:
+            requests:
+              memory: "2Gi"
+              cpu: "500m"
+            limits:
+              memory: "3Gi"
+              cpu: "1"
+
+          # Oracle XE takes 3-5 minutes to initialize on first boot.
+          # The readiness probe starts checking after 120 seconds (initialDelaySeconds)
+          # and retries every 30 seconds. The pod will not receive traffic until
+          # Oracle reports ready. The liveness probe uses a longer threshold to avoid
+          # killing the pod during initialization.
+          readinessProbe:
+            exec:
+              command:
+                - /bin/sh
+                - -c
+                - echo "SELECT 1 FROM DUAL;" | sqlplus -S system/$ORACLE_PWD@XEPDB1
+            initialDelaySeconds: 120
+            periodSeconds: 30
+            failureThreshold: 10
+            timeoutSeconds: 10
+
+          livenessProbe:
+            exec:
+              command:
+                - /bin/sh
+                - -c
+                - echo "SELECT 1 FROM DUAL;" | sqlplus -S system/$ORACLE_PWD@XEPDB1
+            initialDelaySeconds: 180
+            periodSeconds: 60
+            failureThreshold: 5
+            timeoutSeconds: 10
+
+          volumeMounts:
+            - name: oracle-data
+              mountPath: /opt/oracle/oradata
+            - name: oracle-init-sql
+              mountPath: /opt/oracle/scripts/setup
+              readOnly: true
+
+      volumes:
+        - name: oracle-data
+          persistentVolumeClaim:
+            claimName: oracle-data-pvc
+        - name: oracle-init-sql
+          configMap:
+            name: oracle-init-sql

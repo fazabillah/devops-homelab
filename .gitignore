@@ -173,6 +173,11 @@ nginx/*.pid
 nginx/error.log
 nginx/access.log
 
+# oracle
+k8s/java-oracle/secret.yaml
+k8s/splunk/secret.yaml
+
 # personal
 guide/
 .obsidian/
+
