@@ -9,4 +9,4 @@ namePrefix: prod-
 
 images:
   - name: YOUR_DOCKERHUB_USERNAME/java-screening-app
-    newTag: placeholder
+    newTag: sha-3f7bd03
