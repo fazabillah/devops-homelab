@@ -77,14 +77,25 @@ jobs:
           labels: ${{ steps.meta.outputs.labels }}
           load: true
 
-      - name: Run Trivy vulnerability scan
+      - name: Run Trivy scan (SARIF report)
         # Pin to v0.35.0, not @master. trivy-action@master was compromised in March 2026 for ~12h.
         # Always pin to a versioned tag or full commit SHA for supply-chain safety.
+        # exit-code: '0' — SARIF mode ignores severity filter for exit code, so we separate
+        # report generation from the pipeline gate to avoid false failures.
         uses: aquasecurity/trivy-action@v0.35.0
         with:
           image-ref: ${{ env.IMAGE_NAME }}:sha-${{ env.SHORT_SHA }}
           format: 'sarif'
           output: 'trivy-results.sarif'
+          exit-code: '0'
+          ignore-unfixed: true
+
+      - name: Run Trivy scan (pipeline gate)
+        # Gates the pipeline on CRITICAL findings with available fixes only.
+        uses: aquasecurity/trivy-action@v0.35.0
+        with:
+          image-ref: ${{ env.IMAGE_NAME }}:sha-${{ env.SHORT_SHA }}
+          format: 'table'
           severity: 'CRITICAL'
           exit-code: '1'
           ignore-unfixed: true
