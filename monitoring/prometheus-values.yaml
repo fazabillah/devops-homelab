@@ -21,6 +21,7 @@ prometheus:
         cpu: 500m
         memory: 1Gi
 
+
 alertmanager:
   alertmanagerSpec:
     resources:
@@ -83,6 +84,35 @@ kube-state-metrics:
     limits:
       cpu: 200m
       memory: 128Mi
+
+# Disable the built-in CPUThrottlingHigh — replaced below with a tuned version
+defaultRules:
+  disabled:
+    CPUThrottlingHigh: true
+
+# Override CPUThrottlingHigh: raise threshold to 50% and exclude node-exporter.
+# Default 25% fires false positives on bursty system components like node-exporter.
+# 50% sustained for 15m is a more actionable signal.
+additionalPrometheusRulesMap:
+  cpu-throttling-override:
+    groups:
+      - name: kubernetes-resources-override
+        rules:
+          - alert: CPUThrottlingHigh
+            expr: |
+              sum(increase(container_cpu_cfs_throttled_periods_total{container!="", container!="node-exporter"}[5m])) by (container, pod, namespace)
+                /
+              sum(increase(container_cpu_cfs_periods_total{container!="", container!="node-exporter"}[5m])) by (container, pod, namespace)
+                > 0.50
+            for: 15m
+            labels:
+              severity: warning
+            annotations:
+              summary: Processes experience elevated CPU throttling.
+              description: >-
+                {{ $value | humanizePercentage }} throttling of CPU in namespace
+                {{ $labels.namespace }} for container {{ $labels.container }}
+                in pod {{ $labels.pod }}.
 
 # Reduce node-exporter resources
 prometheus-node-exporter:
