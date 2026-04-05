@@ -1,0 +1,71 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: java-screening-app
+  labels:
+    app: java-screening-app
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: java-screening-app
+  template:
+    metadata:
+      labels:
+        app: java-screening-app
+    spec:
+      containers:
+        - name: java-screening-app
+          image: fazabillah/java-screening-app:latest
+          ports:
+            - containerPort: 8080
+              name: http
+
+          # DB connection values injected from ConfigMap and Secret in java-prod.
+          # The base deployment references these by name — overlays don't need to repeat them.
+          env:
+            - name: DB_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: oracle-jdbc-config
+                  key: DB_URL
+            - name: DB_USERNAME
+              valueFrom:
+                configMapKeyRef:
+                  name: oracle-jdbc-config
+                  key: DB_USERNAME
+            - name: DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: oracle-db-secret
+                  key: DB_PASSWORD
+            - name: APP_ENVIRONMENT
+              value: "production"
+
+          resources:
+            requests:
+              memory: "128Mi"
+              cpu: "100m"
+            limits:
+              memory: "256Mi"
+              cpu: "500m"
+
+          # Readiness probe — Actuator health endpoint.
+          # Pod receives no traffic until this returns 200.
+          readinessProbe:
+            httpGet:
+              path: /actuator/health
+              port: 8080
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            failureThreshold: 5
+
+          # Liveness probe — detects deadlocked JVM.
+          # If this fails, Kubernetes restarts the container.
+          livenessProbe:
+            httpGet:
+              path: /actuator/health
+              port: 8080
+            initialDelaySeconds: 60
+            periodSeconds: 20
+            failureThreshold: 3

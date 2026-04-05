@@ -1,0 +1,20 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: java-app-prod
+  namespace: argocd
+spec:
+  project: java
+  source:
+    repoURL: https://github.com/fazabillah/devops-homelab.git
+    targetRevision: HEAD
+    path: java-kustomize/overlays/prod
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: java-prod
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true

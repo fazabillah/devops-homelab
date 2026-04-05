@@ -1,0 +1,25 @@
+apiVersion: argoproj.io/v1alpha1
+kind: AppProject
+metadata:
+  name: java
+  namespace: argocd
+spec:
+  description: ArgoCD project scoped to the java-lab application stack
+
+  # Only allow syncing from this repo
+  sourceRepos:
+    - https://github.com/fazabillah/devops-homelab.git
+
+  # Only allow deploying to these namespaces on the in-cluster server
+  destinations:
+    - server: https://kubernetes.default.svc
+      namespace: java-dev
+    - server: https://kubernetes.default.svc
+      namespace: java-staging
+    - server: https://kubernetes.default.svc
+      namespace: java-prod
+
+  # No cluster-scoped resources (Namespaces, ClusterRoles, etc.)
+  # CreateNamespace=true in the Applications is still allowed — it's a sync option, not a resource type
+  clusterResourceWhitelist: []
+  

@@ -4,12 +4,12 @@ kind: Kustomization
 resources:
   - ../../base
 
-namespace: java-prod
-namePrefix: prod-
+namespace: java-staging
+namePrefix: staging-
 
 patches:
   - path: patch-replicas.yaml
 
 images:
-  - name: fazabillah/java-screening-app
-    newTag: sha-3f7bd03
+  - name: YOUR_DOCKERHUB_USERNAME/java-screening-app
+    newTag: latest
