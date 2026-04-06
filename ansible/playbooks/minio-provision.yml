@@ -1,0 +1,28 @@
+---
+- name: Provision MinIO Buckets
+  hosts: localhost
+  connection: local
+  gather_facts: false
+  become: false
+
+  tasks:
+    - name: Check if bucket exists
+      ansible.builtin.command:
+        cmd: "mc ls {{ minio_alias }}/{{ item }}"
+      loop: "{{ minio_buckets }}"
+      register: bucket_check
+      changed_when: false
+      failed_when: false
+
+    - name: Create MinIO buckets (idempotent)
+      ansible.builtin.command:
+        cmd: "mc mb {{ minio_alias }}/{{ item.item }}"
+      loop: "{{ bucket_check.results }}"
+      when: item.rc != 0
+      register: bucket_result
+      changed_when: true
+
+    - name: Print bucket status
+      ansible.builtin.debug:
+        msg: "{{ item.item }}: {{ 'already exists' if item.rc == 0 else 'created' }}"
+      loop: "{{ bucket_check.results }}"

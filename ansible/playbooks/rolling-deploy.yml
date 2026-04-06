@@ -1,0 +1,52 @@
+---
+- name: Rolling Deploy — Screening App
+  hosts: k3s_control
+  gather_facts: false
+
+  vars:
+    new_tag: "{{ image_tag | mandatory }}"  # required: pass with -e image_tag=v1.2.3
+
+  tasks:
+    - name: Validate image_tag was provided
+      ansible.builtin.fail:
+        msg: "image_tag is required. Use: ansible-playbook rolling-deploy.yml -e image_tag=v1.2.3"
+      when: new_tag is not defined or new_tag == ''
+
+    - name: Update kustomize prod overlay with new image tag
+      ansible.builtin.lineinfile:
+        path: "{{ kustomize_prod_path }}/kustomization.yaml"
+        regexp: '^\s*newTag:'
+        line: "  newTag: {{ new_tag }}"
+        backrefs: yes
+
+    - name: Commit and push the tag change
+      ansible.builtin.shell: |
+        cd /home/fbi/devops-homelab
+        git add java-kustomize/overlays/prod/kustomization.yaml
+        git diff --cached --quiet && echo "nothing to commit" && exit 0
+        git commit -m "deploy: java-screening-app {{ new_tag }}"
+        git push origin main
+      register: git_output
+      environment:
+        GIT_TERMINAL_PROMPT: "0"
+        GIT_SSH_COMMAND: "ssh -i /home/fbi/.ssh/id_ed25519 -o BatchMode=yes -o StrictHostKeyChecking=no"
+
+    - name: Print git output
+      ansible.builtin.debug:
+        msg: "{{ git_output.stdout_lines }}"
+
+    - name: Trigger ArgoCD sync
+      ansible.builtin.command:
+        cmd: argocd app sync java-app-prod --grpc-web
+      register: argocd_sync
+      changed_when: true
+      ignore_errors: true
+
+    - name: Wait for rollout to complete
+      ansible.builtin.command:
+        cmd: "kubectl rollout status deployment/prod-java-screening-app -n {{ java_namespace_prod }} --timeout=120s"
+      register: rollout_status
+
+    - name: Print rollout status
+      ansible.builtin.debug:
+        msg: "{{ rollout_status.stdout }}"
