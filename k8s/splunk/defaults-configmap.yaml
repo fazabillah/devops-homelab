@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: splunk-defaults
+  namespace: monitoring
+data:
+  default.yml: |
+    ---
+    splunk:
+      hec:
+        enable: True
+        ssl: True
+        port: 8088
+        token: 844c8b93-de04-417d-9a98-d87eed672604
+        index: main

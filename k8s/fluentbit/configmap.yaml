@@ -1,0 +1,81 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: fluent-bit-java-config
+  namespace: monitoring
+data:
+  fluent-bit.conf: |
+    [SERVICE]
+        Flush         5
+        Daemon        Off
+        Log_Level     info
+        Parsers_File  parsers.conf
+
+    # Read from the container log files on the node
+    [INPUT]
+        Name              tail
+        Path              /var/log/containers/*.log
+        # K3s uses containerd, which writes logs in CRI format (not Docker JSON).
+        # Use the cri parser to correctly parse timestamps and log fields.
+        Parser            cri
+        Tag               kube.*
+        Refresh_Interval  5
+        # Increased from 5MB: high-volume namespaces (Loki, monitoring) were filling
+        # the 5MB buffer and triggering mem buf overlimit pauses, starving java-prod reads.
+        Mem_Buf_Limit     50MB
+        Skip_Long_Lines   On
+
+    # Enrich logs with Kubernetes metadata (namespace, pod name, labels)
+    [FILTER]
+        Name                kubernetes
+        Match               kube.*
+        Kube_URL            https://kubernetes.default.svc:443
+        Kube_CA_File        /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
+        Kube_Token_File     /var/run/secrets/kubernetes.io/serviceaccount/token
+        Merge_Log           On
+        Keep_Log            Off
+
+    # Lift the nested 'kubernetes' map to top-level with a k8s_ prefix so the
+    # grep filter below can match on the flat key k8s_namespace_name.
+    # The record accessor syntax ($kubernetes['namespace_name']) does not work
+    # reliably in all Fluent Bit 4.x builds for the grep filter.
+    [FILTER]
+        Name         nest
+        Match        kube.*
+        Operation    lift
+        Nested_under kubernetes
+        Add_prefix   k8s_
+
+    # Only forward logs from java-* namespaces to Splunk.
+    # Logs from other namespaces are dropped here — they go to Loki via Promtail.
+    [FILTER]
+        Name    grep
+        Match   kube.*
+        Regex   k8s_namespace_name ^java-
+
+    [OUTPUT]
+        Name            splunk
+        Match           kube.*
+        Host            splunk.monitoring.svc.cluster.local
+        Port            8088
+        Splunk_Token    ${SPLUNK_HEC_TOKEN}
+        # Splunk HEC has SSL enabled by default (enableSSL=1). Use tls On with
+        # tls.verify Off since the pod uses a self-signed cert.
+        tls             On
+        tls.verify      Off
+        # Splunk_Send_Raw is intentionally omitted. With it On, Fluent Bit uses the
+        # /raw HEC endpoint which rejects indexed fields (Splunk error code 15).
+        # Without it, Fluent Bit uses /event and wraps the full record in the event
+        # JSON object, which works correctly with Splunk Free.
+
+  parsers.conf: |
+    [PARSER]
+        # CRI parser for containerd log format (used by K3s).
+        # Log line format: <time> <stream> <flags> <log>
+        # Example: 2026-04-05T10:23:41.123456789Z stdout F {"message":"..."}
+        Name        cri
+        Format      regex
+        Regex       ^(?<time>[^ ]+) (?<stream>stdout|stderr) (?<logtag>[^ ]*) (?<log>.*)$
+        Time_Key    time
+        Time_Format %Y-%m-%dT%H:%M:%S.%L%z
+        Time_Keep   On
