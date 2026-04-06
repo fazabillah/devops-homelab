@@ -1,0 +1,60 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: java-screening-app
+  namespace: java-openshift
+  labels:
+    app: java-screening-app
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: java-screening-app
+  template:
+    metadata:
+      labels:
+        app: java-screening-app
+    spec:
+      containers:
+        - name: screening
+          image: fazabillah/java-screening-app:latest
+          ports:
+            - containerPort: 8080
+          env:
+            - name: APP_VERSION
+              value: "openshift-local"
+            - name: APP_ENVIRONMENT
+              value: "openshift"
+            # Oracle is not running in CRC — app uses degraded fallback
+            - name: DB_URL
+              value: "jdbc:oracle:thin:@localhost:1521/XEPDB1"
+            - name: DB_USERNAME
+              value: "system"
+            - name: DB_PASSWORD
+              value: "placeholder"
+          readinessProbe:
+            httpGet:
+              path: /actuator/health
+              port: 8080
+            initialDelaySeconds: 30
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /actuator/health
+              port: 8080
+            initialDelaySeconds: 60
+            periodSeconds: 15
+          resources:
+            requests:
+              memory: "128Mi"
+              cpu: "100m"
+            limits:
+              memory: "256Mi"
+              cpu: "500m"
+          # OpenShift assigns a random UID — do not specify runAsUser here
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+            readOnlyRootFilesystem: false
