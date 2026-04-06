@@ -1,0 +1,89 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: splunk
+  namespace: monitoring
+  labels:
+    app: splunk
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: splunk
+  template:
+    metadata:
+      labels:
+        app: splunk
+    spec:
+      # Run Splunk on VM2 alongside Oracle.
+      # VM1 runs the control plane + Prometheus/Grafana/Loki monitoring stack.
+      nodeSelector:
+        kubernetes.io/hostname: k3s-worker
+
+      containers:
+        - name: splunk
+          image: splunk/splunk:9.4.0
+          ports:
+            - containerPort: 8000
+              name: web
+            - containerPort: 8088
+              name: hec
+            - containerPort: 9997
+              name: forwarder
+
+          env:
+            - name: SPLUNK_START_ARGS
+              value: "--accept-license"
+            - name: SPLUNK_LICENSE_URI
+              value: "Free"
+            - name: SPLUNK_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: splunk-secret
+                  key: SPLUNK_PASSWORD
+
+          resources:
+            requests:
+              memory: "512Mi"
+              cpu: "250m"
+            limits:
+              memory: "1Gi"
+              cpu: "1"
+
+          # startupProbe gives Splunk up to 15 minutes (30 * 30s) to complete its
+          # first-boot Ansible initialization. TCP socket check avoids auth
+          # issues with the Splunk REST API health endpoint.
+          startupProbe:
+            tcpSocket:
+              port: 8000
+            failureThreshold: 30
+            periodSeconds: 30
+
+          readinessProbe:
+            tcpSocket:
+              port: 8000
+            periodSeconds: 15
+            failureThreshold: 3
+
+          livenessProbe:
+            tcpSocket:
+              port: 8000
+            periodSeconds: 30
+            failureThreshold: 3
+
+          volumeMounts:
+            - name: splunk-data
+              mountPath: /opt/splunk/var
+            # Mount default.yml so Splunk's Ansible playbook configures HEC on every
+            # startup. This survives pod restarts without read-only file ownership issues.
+            - name: splunk-defaults
+              mountPath: /tmp/defaults/default.yml
+              subPath: default.yml
+
+      volumes:
+        - name: splunk-data
+          persistentVolumeClaim:
+            claimName: splunk-data-pvc
+        - name: splunk-defaults
+          configMap:
+            name: splunk-defaults
