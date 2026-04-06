@@ -1,0 +1,79 @@
+{
+  "title": "Logistics Screening App",
+  "uid": "java-screening-app",
+  "tags": ["java-lab", "java", "spring-boot"],
+  "schemaVersion": 38,
+  "refresh": "30s",
+  "time": { "from": "now-1h", "to": "now" },
+  "panels": [
+    {
+      "id": 1,
+      "title": "JVM Heap Usage",
+      "type": "timeseries",
+      "gridPos": { "x": 0, "y": 0, "w": 12, "h": 8 },
+      "targets": [
+        {
+          "expr": "jvm_memory_used_bytes{namespace=\"java-prod\", area=\"heap\"}",
+          "legendFormat": "Used"
+        },
+        {
+          "expr": "jvm_memory_max_bytes{namespace=\"java-prod\", area=\"heap\"}",
+          "legendFormat": "Max"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": { "unit": "bytes", "custom": { "fillOpacity": 10 } }
+      }
+    },
+    {
+      "id": 2,
+      "title": "HTTP Request Rate (per second)",
+      "type": "timeseries",
+      "gridPos": { "x": 12, "y": 0, "w": 12, "h": 8 },
+      "targets": [
+        {
+          "expr": "rate(http_server_requests_seconds_count{namespace=\"java-prod\"}[1m])",
+          "legendFormat": "{{method}} {{uri}} {{status}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": { "unit": "reqps" }
+      }
+    },
+    {
+      "id": 3,
+      "title": "HTTP Error Rate (5xx per second)",
+      "type": "timeseries",
+      "gridPos": { "x": 0, "y": 8, "w": 12, "h": 8 },
+      "targets": [
+        {
+          "expr": "rate(http_server_requests_seconds_count{namespace=\"java-prod\", status=~\"5..\"}[1m])",
+          "legendFormat": "{{uri}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": { "unit": "reqps", "color": { "mode": "fixed", "fixedColor": "red" } }
+      }
+    },
+    {
+      "id": 4,
+      "title": "HikariCP Connection Pool",
+      "type": "timeseries",
+      "gridPos": { "x": 12, "y": 8, "w": 12, "h": 8 },
+      "targets": [
+        {
+          "expr": "hikaricp_connections_active{namespace=\"java-prod\"}",
+          "legendFormat": "Active"
+        },
+        {
+          "expr": "hikaricp_connections_idle{namespace=\"java-prod\"}",
+          "legendFormat": "Idle"
+        },
+        {
+          "expr": "hikaricp_connections_timeout_total{namespace=\"java-prod\"}",
+          "legendFormat": "Timeouts (total)"
+        }
+      ]
+    }
+  ]
+}
