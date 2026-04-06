@@ -1,0 +1,54 @@
+<dashboard version="1.1" theme="light">
+  <label>Logistics Operations</label>
+  <row>
+    <panel>
+      <table>
+        <title>Java Prod - Log Volume by Container</title>
+        <search ref="Java Prod - Log Volume by Container"></search>
+        <option name="drilldown">none</option>
+      </table>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <table>
+        <title>Java Prod - Error Events</title>
+        <search ref="Java Prod - Error Events"></search>
+        <option name="drilldown">none</option>
+      </table>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <table>
+        <title>Top Error Patterns</title>
+        <search>
+          <query>index="main" k8s_namespace_name=java-prod (log="*ERROR*" OR log="*Exception*")
+| rex field=log "(?&lt;error_summary&gt;[^\n]{0,120})"
+| stats count by error_summary
+| sort -count
+| head 10</query>
+          <earliest>-4h@m</earliest>
+          <latest>now</latest>
+        </search>
+        <option name="drilldown">none</option>
+      </table>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <table>
+        <title>Recent Log Events</title>
+        <search>
+          <query>index="main" k8s_namespace_name=java-prod
+| table _time k8s_container_name log
+| sort -_time
+| head 50</query>
+          <earliest>-15m</earliest>
+          <latest>now</latest>
+        </search>
+        <option name="drilldown">none</option>
+      </table>
+    </panel>
+  </row>
+</dashboard>
