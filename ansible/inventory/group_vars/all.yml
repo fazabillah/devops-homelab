@@ -1,0 +1,24 @@
+# App configuration
+java_namespace_prod: java-prod
+java_namespace_staging: java-staging
+java_namespace_dev: java-dev
+java_app_name: java-screening-app
+java_app_port: 8080
+
+# Oracle XE
+oracle_namespace: java-prod
+oracle_service: oracle-xe
+oracle_port: 1521
+
+# Splunk HEC
+splunk_namespace: monitoring
+splunk_hec_port: 8088
+
+# MinIO (VM3 — local-registry)
+minio_api_url: "http://100.89.146.26:9000"
+minio_alias: homelab
+minio_buckets:
+  - terraform-state
+
+# Kustomize overlay path (relative to repo root on control node)
+kustomize_prod_path: /home/fbi/devops-homelab/java-kustomize/overlays/prod

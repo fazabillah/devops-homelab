@@ -1,0 +1,61 @@
+---
+- name: Rollback — Screening App
+  hosts: k3s_control
+  gather_facts: false
+
+  vars:
+    rollback_tag: "{{ image_tag | mandatory }}"
+
+  tasks:
+    - name: Validate image_tag was provided
+      ansible.builtin.fail:
+        msg: "image_tag is required. Use: ansible-playbook rollback.yml -e image_tag=v1.1.0"
+      when: rollback_tag is not defined
+
+    - name: Show current deployed tag before rollback
+      ansible.builtin.command:
+        cmd: "kubectl get deployment prod-java-screening-app -n {{ java_namespace_prod }} -o jsonpath='{.spec.template.spec.containers[0].image}'"
+      register: current_image
+      changed_when: false
+
+    - name: Print current image
+      ansible.builtin.debug:
+        msg: "Current image: {{ current_image.stdout }}"
+
+    - name: Update kustomize prod overlay with rollback tag
+      ansible.builtin.lineinfile:
+        path: "{{ kustomize_prod_path }}/kustomization.yaml"
+        regexp: '^\s*newTag:'
+        line: "  newTag: {{ rollback_tag }}"
+        backrefs: yes
+
+    - name: Commit and push rollback
+      ansible.builtin.shell: |
+        cd /home/fbi/devops-homelab
+        git add java-kustomize/overlays/prod/kustomization.yaml
+        git diff --cached --quiet && echo "nothing to commit" && exit 0
+        git commit -m "rollback: java-screening-app to {{ rollback_tag }}"
+        git push origin main
+      environment:
+        GIT_TERMINAL_PROMPT: "0"
+        GIT_SSH_COMMAND: "ssh -i /home/fbi/.ssh/id_ed25519 -o BatchMode=yes -o StrictHostKeyChecking=no"
+
+    - name: Sync ArgoCD
+      ansible.builtin.command:
+        cmd: argocd app sync java-app-prod --grpc-web
+      ignore_errors: true
+
+    - name: Wait for rollback rollout
+      ansible.builtin.command:
+        cmd: "kubectl rollout status deployment/prod-java-screening-app -n {{ java_namespace_prod }} --timeout=120s"
+      register: rollout_status
+
+    - name: Confirm rolled-back image
+      ansible.builtin.command:
+        cmd: "kubectl get deployment prod-java-screening-app -n {{ java_namespace_prod }} -o jsonpath='{.spec.template.spec.containers[0].image}'"
+      register: new_image
+      changed_when: false
+
+    - name: Print confirmation
+      ansible.builtin.debug:
+        msg: "Rolled back to: {{ new_image.stdout }}"

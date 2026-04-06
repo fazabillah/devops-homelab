@@ -1,0 +1,44 @@
+---
+- name: Oracle XE Database Validation
+  hosts: k3s_control
+  gather_facts: false
+
+  tasks:
+    - name: Get Oracle pod name
+      ansible.builtin.command:
+        cmd: "kubectl get pod -n {{ oracle_namespace }} -l app=oracle -o jsonpath='{.items[0].metadata.name}'"
+      register: oracle_pod_name
+      changed_when: false
+
+    - name: Verify Oracle listener is up (port 1521)
+      ansible.builtin.command:
+        cmd: "kubectl exec -n {{ oracle_namespace }} {{ oracle_pod_name.stdout }} -- bash -c 'echo exit | sqlplus -S system/$ORACLE_PWD@localhost:1521/XEPDB1 <<< \"SELECT 1 FROM DUAL;\"'"
+      register: sqlplus_test
+      changed_when: false
+      ignore_errors: true
+
+    - name: Print SQL test output
+      ansible.builtin.debug:
+        msg: "{{ sqlplus_test.stdout_lines }}"
+
+    - name: Fail if Oracle is not responding
+      ansible.builtin.fail:
+        msg: "Oracle XE is not responding to SQL queries. Check pod logs."
+      when: sqlplus_test.rc != 0
+
+    - name: Check screenings table exists
+      ansible.builtin.command:
+        cmd: >
+          kubectl exec -n {{ oracle_namespace }} {{ oracle_pod_name.stdout }} --
+          bash -c 'echo "SELECT COUNT(*) FROM screenings;" | sqlplus -S system/$ORACLE_PWD@localhost:1521/XEPDB1'
+      register: table_check
+      changed_when: false
+      ignore_errors: true
+
+    - name: Print table check result
+      ansible.builtin.debug:
+        msg: "{{ table_check.stdout_lines }}"
+
+    - name: Report database status
+      ansible.builtin.debug:
+        msg: "Database validation complete. Oracle XE is {{ 'healthy' if sqlplus_test.rc == 0 else 'DEGRADED' }}."

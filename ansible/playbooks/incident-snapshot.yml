@@ -1,0 +1,78 @@
+---
+- name: Incident Snapshot — App Stack
+  hosts: k3s_control
+  gather_facts: true
+
+  vars:
+    snapshot_dir: "/tmp/incident-{{ ansible_date_time.iso8601_basic_short }}"
+
+  tasks:
+    - name: Create snapshot directory
+      ansible.builtin.file:
+        path: "{{ snapshot_dir }}"
+        state: directory
+        mode: '0755'
+
+    - name: Collect pod list across all app namespaces
+      ansible.builtin.shell: |
+        for ns in java-dev java-staging java-prod monitoring; do
+          echo "=== Namespace: $ns ===" >> {{ snapshot_dir }}/pods.txt
+          kubectl get pods -n $ns -o wide >> {{ snapshot_dir }}/pods.txt
+          echo "" >> {{ snapshot_dir }}/pods.txt
+        done
+      changed_when: false
+
+    - name: Collect recent events
+      ansible.builtin.shell: |
+        for ns in java-dev java-staging java-prod; do
+          echo "=== Events: $ns ===" >> {{ snapshot_dir }}/events.txt
+          kubectl get events -n $ns --sort-by='.lastTimestamp' >> {{ snapshot_dir }}/events.txt
+          echo "" >> {{ snapshot_dir }}/events.txt
+        done
+      changed_when: false
+
+    - name: Collect prod pod logs (last 200 lines each)
+      ansible.builtin.shell: |
+        for pod in $(kubectl get pods -n java-prod -o name); do
+          name=$(basename $pod)
+          kubectl logs -n java-prod $name --tail=200 > {{ snapshot_dir }}/log-${name}.txt 2>&1
+        done
+      changed_when: false
+
+    - name: Collect pod descriptions
+      ansible.builtin.shell: |
+        kubectl describe pods -n java-prod >> {{ snapshot_dir }}/pod-descriptions.txt
+      changed_when: false
+
+    - name: Collect node resource usage
+      ansible.builtin.command:
+        cmd: kubectl top nodes
+      register: node_usage
+      changed_when: false
+      ignore_errors: true
+
+    - name: Save node usage
+      ansible.builtin.copy:
+        content: "{{ node_usage.stdout }}"
+        dest: "{{ snapshot_dir }}/node-usage.txt"
+
+    - name: Create tarball
+      ansible.builtin.archive:
+        path: "{{ snapshot_dir }}"
+        dest: "{{ snapshot_dir }}.tar.gz"
+        format: gz
+
+    - name: Fetch tarball to MacBook Air
+      ansible.builtin.fetch:
+        src: "{{ snapshot_dir }}.tar.gz"
+        dest: "~/Desktop/incident-snapshots/"
+        flat: yes
+
+    - name: Clean up remote temp files
+      ansible.builtin.file:
+        path: "{{ snapshot_dir }}"
+        state: absent
+
+    - name: Report snapshot location
+      ansible.builtin.debug:
+        msg: "Snapshot saved to ~/Desktop/incident-snapshots/{{ snapshot_dir | basename }}.tar.gz"

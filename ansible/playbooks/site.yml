@@ -1,0 +1,6 @@
+---
+# Master playbook — runs health check, then validates the database.
+# Does not deploy anything. Safe to run at any time.
+
+- import_playbook: health-check.yml
+- import_playbook: db-validate.yml

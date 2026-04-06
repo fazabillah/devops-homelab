@@ -1,0 +1,65 @@
+---
+- name: Stack Health Check
+  hosts: k3s_control
+  gather_facts: false
+
+  tasks:
+    - name: Check K3s nodes are Ready
+      ansible.builtin.command:
+        cmd: kubectl get nodes --no-headers
+      register: nodes_output
+      changed_when: false
+
+    - name: Print node status
+      ansible.builtin.debug:
+        msg: "{{ nodes_output.stdout_lines }}"
+
+    - name: Fail if any node is NotReady
+      ansible.builtin.fail:
+        msg: "Node is not Ready: {{ nodes_output.stdout }}"
+      when: "'NotReady' in nodes_output.stdout"
+
+    - name: Check app pods in prod
+      ansible.builtin.command:
+        cmd: "kubectl get pods -n {{ java_namespace_prod }} --no-headers"
+      register: prod_pods
+      changed_when: false
+
+    - name: Print prod pod status
+      ansible.builtin.debug:
+        msg: "{{ prod_pods.stdout_lines }}"
+
+    - name: Fail if any prod pod is not Running
+      ansible.builtin.fail:
+        msg: "Pod is not Running in {{ java_namespace_prod }}: {{ prod_pods.stdout }}"
+      when: >
+        'CrashLoopBackOff' in prod_pods.stdout or
+        'Error' in prod_pods.stdout or
+        'Pending' in prod_pods.stdout
+
+    - name: Check Oracle XE pod
+      ansible.builtin.command:
+        cmd: "kubectl get pods -n {{ oracle_namespace }} -l app=oracle-xe --no-headers"
+      register: oracle_pod
+      changed_when: false
+
+    - name: Print Oracle pod status
+      ansible.builtin.debug:
+        msg: "{{ oracle_pod.stdout_lines }}"
+
+    - name: Verify app health endpoint responds
+      ansible.builtin.shell: >
+        kubectl exec -n {{ java_namespace_prod }}
+        $(kubectl get pod -n {{ java_namespace_prod }} -l app=java-screening-app -o jsonpath='{.items[0].metadata.name}')
+        -- wget -qO- http://localhost:{{ java_app_port }}/actuator/health
+      register: health_response
+      changed_when: false
+      ignore_errors: true
+
+    - name: Print health response
+      ansible.builtin.debug:
+        msg: "{{ health_response.stdout }}"
+
+    - name: Summarize health check
+      ansible.builtin.debug:
+        msg: "Health check complete. Review output above for any failures."
